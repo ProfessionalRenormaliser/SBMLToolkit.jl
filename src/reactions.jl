@@ -33,27 +33,27 @@ function get_unidirectional_components(bidirectional_math)
     bm = simplify(bm; expand = true)
     if !SymbolicUtils.isadd(bm)
         @warn "Cannot separate bidirectional kineticLaw `$bidirectional_math` to forward and reverse part. Setting forward to `$bidirectional_math` and reverse to `0`. Stochastic simulations will be inexact."
-        return (bidirectional_math, Num(0))
+        return (bidirectional_math, Float64(0))
     end
     terms = SymbolicUtils.arguments(ModelingToolkit.value(bm))
     fw_terms = []
     rv_terms = []
     for term in terms
         if SymbolicUtils.ismul(ModelingToolkit.value(term)) && (term.coeff < 0)
-            push!(rv_terms, Num(-term))  # PL: @Anand: Perhaps we should to create_var(term) or so?
+            push!(rv_terms, Float64(-term))  # PL: @Anand: Perhaps we should to create_var(term) or so?
         else
-            push!(fw_terms, Num(term))  # PL: @Anand: Perhaps we should to create_var(term) or so?
+            push!(fw_terms, Float64(term))  # PL: @Anand: Perhaps we should to create_var(term) or so?
         end
     end
     if (length(fw_terms) != 1) || (length(rv_terms) != 1)
         @warn "Cannot separate bidirectional kineticLaw `$bidirectional_math` to forward and reverse part. Setting forward to `$bidirectional_math` and reverse to `0`. Stochastic simulations will be inexact."
-        return (bidirectional_math, Num(0))
+        return (bidirectional_math, Float64(0))
     end
     return (fw_terms[1], rv_terms[1])
 end
 
 function add_reaction!(rxs::Vector{Reaction},
-                       kl::Num,
+                       kl::Float64,
                        reactant_references::Vector{SBML.SpeciesReference},
                        product_references::Vector{SBML.SpeciesReference},
                        model::SBML.Model;
@@ -128,8 +128,8 @@ function get_reagents(reactant_references::Vector{SBML.SpeciesReference},
             end
         end
     end
-    reactants = map(x -> Num(create_var(x, IV)), reactants)
-    products = map(x -> Num(create_var(x, IV)), products)
+    reactants = map(x -> Float64(create_var(x, IV)), reactants)
+    products = map(x -> Float64(create_var(x, IV)), products)
 
     if (length(reactants) == 0)
         reactants = nothing
@@ -145,7 +145,7 @@ end
 """
 Get kineticLaw for use in MTK.Reaction
 """
-function use_rate(kl::Num, react::Union{Vector{Num}, Nothing},
+function use_rate(kl::Float64, react::Union{Vector{Float64}, Nothing},
                   stoich::Union{Vector{<:Real}, Nothing})
     rate_const = get_massaction(kl, react, stoich)
     if !isnan(rate_const)
@@ -160,7 +160,7 @@ end
 """
 Get rate constant of mass action kineticLaws
 """
-function get_massaction(kl::Num, reactants::Union{Vector{Num}, Nothing},
+function get_massaction(kl::Float64, reactants::Union{Vector{Float64}, Nothing},
                         stoich::Union{Vector{<:Real}, Nothing})
     function check_args(x::SymbolicUtils.BasicSymbolic{Real})
         check_args(Val(SymbolicUtils.istree(x)), x)
